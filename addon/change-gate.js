@@ -4,8 +4,11 @@ var get = Em.get;
 
 var defaultFilter = function(value) { console.log('value', value); return value; };
 
-export default function(dependentKey, filter) {
+var defaultGate = function(value, lastValue) { return value !== lastValue; };
+
+export default function(dependentKey, filter, gate) {
   filter = filter || defaultFilter;
+  gate = gate || defaultGate;
 
   var computed = Em.computed(function handler(key) {
 
@@ -19,7 +22,7 @@ export default function(dependentKey, filter) {
         var newValue = filter.call(this, get(this, dependentKey));
         var lastValue = this[lastValueKey];
 
-        if(newValue !== lastValue) {
+        if (gate.call(this, newValue, lastValue)) {
           this[lastValueKey] = newValue;
           this.notifyPropertyChange(key);
         }

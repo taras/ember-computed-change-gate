@@ -167,3 +167,35 @@ test("changeGate filter is bound to instance that it's attached to", function(){
   instance = Paragraph.create();
   instance.get('wordCount');
 });
+
+
+test('a changeGate can be closed conditionally', function(){
+  var Paragraph = Em.Object.extend({
+    text: 'Hello there',
+    gateClosed: false,
+    wordCount: changeGate('text', function(value) {
+      return value.split(/\s+/).length;
+    }, function(newValue, oldValue){
+      return !this.get('gateClosed') && newValue !== oldValue;
+    })
+  });
+
+  var p = Paragraph.create();
+
+  var wordCountObserverCount = 0;
+
+  p.addObserver('wordCount', function() {
+    wordCountObserverCount++;
+  });
+
+  equal(p.get('wordCount'), 2);
+  equal(wordCountObserverCount, 0);
+
+  p.set('gateClosed', true);
+  p.set('text', 'Hello there world');
+  equal(wordCountObserverCount, 0, "observer does not fire when the gate is closed");
+
+  p.set('gateClosed', false);
+  p.set('text', 'Hello');
+  equal(wordCountObserverCount, 1, "observer fires when the gate is reopened");
+});
